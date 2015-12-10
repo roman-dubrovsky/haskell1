@@ -1,5 +1,6 @@
 module Main where
 
+import Data.List
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 import Data.Csv
@@ -35,6 +36,21 @@ suppliesRow func x vs = map (\v -> suppliesValue func x v vs) vs
 
 suppliesMatrix :: RangeFunction -> [[Double]] -> [[Double]] -> [[Double]]
 suppliesMatrix func xs vs = map (\x -> suppliesRow func x vs) xs
+
+-- =====  clasters find  =====
+
+cordinatClasterFind :: [Double] -> [Double] -> Double
+cordinatClasterFind xs ms = sum1 / sum2
+  where sum1 = sum $ zipWith (*) xs $ map (**exp) ms
+        sum2 = sum ms
+        exp = m
+
+oneClasterFind :: [[Double]] -> [Double] -> [Double]
+oneClasterFind xs ms = map (\x -> cordinatClasterFind x ms) $ transpose xs
+
+
+clastersFind :: [[Double]] -> [[Double]] -> [[Double]]
+clastersFind xs ms = map (\m -> oneClasterFind xs m) $ transpose ms
 
 -- =====  parsing =====
 

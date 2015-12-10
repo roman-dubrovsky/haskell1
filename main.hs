@@ -4,13 +4,33 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 import Data.Csv
 
+-- ===== constants =====
+
+m = 2
+
 -- ===== ranges =====
 
-hammingRange :: Floating a => [a] -> [a] -> a
+hammingRange :: [Double] -> [Double] -> Double
 hammingRange x y = foldl (+) 0 $ map abs $ zipWith (-) x y
 
-evclideRange :: Floating a => [a] -> [a] -> a
+evclideRange :: [Double] -> [Double] -> Double
 evclideRange x y = sqrt $ foldl (+) 0 $ map (** 2) $ zipWith (-) x y
+
+type RangeFunction = ([Double] -> [Double] -> Double)
+
+-- =====  supplies matrix =====
+
+suppliesCof :: RangeFunction -> [Double] -> [Double] -> [Double] -> Double
+suppliesCof func x v y = (cof1 / cof2) ** exp
+  where cof1 = func x v
+        cof2 = func x y
+        exp =  2 / (m - 1)
+
+suppliesValue :: RangeFunction -> [Double] -> [Double] -> [[Double]] -> Double
+suppliesValue func x v vs = cof ** (-1)
+  where cof = foldl (+) 0 $ map (\y -> suppliesCof func x v y) vs
+
+-- =====  parsing =====
 
 type Groups = ([Int])
 

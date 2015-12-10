@@ -1,5 +1,6 @@
 module Main where
 
+import Prelude
 import Data.List
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
@@ -31,8 +32,12 @@ suppliesValue :: RangeFunction -> [Double] -> [Double] -> [[Double]] -> Double
 suppliesValue func x v vs = cof ** (-1)
   where cof = foldl (+) 0 $ map (\y -> suppliesCof func x v y) vs
 
+validSuppliesValue :: RangeFunction -> [Double] -> [Double] -> [[Double]] -> Double
+validSuppliesValue func x v vs = if isNaN value then 1 else value
+  where value = suppliesValue func x v vs
+
 suppliesRow :: RangeFunction -> [Double] -> [[Double]] -> [Double]
-suppliesRow func x vs = map (\v -> suppliesValue func x v vs) vs
+suppliesRow func x vs = map (\v -> validSuppliesValue func x v vs) vs
 
 suppliesMatrix :: RangeFunction -> [[Double]] -> [[Double]] -> [[Double]]
 suppliesMatrix func xs vs = map (\x -> suppliesRow func x vs) xs
@@ -67,7 +72,7 @@ clasterization func xs ms eps
 
 -- =====  parsing =====
 
-type Groups = ([Int])
+type Groups = ([Double])
 
 main :: IO ()
 

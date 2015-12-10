@@ -70,6 +70,12 @@ clasterization func xs ms eps
   | otherwise = clasterization func xs ms_new eps
   where ms_new = suppliesMatrix func xs $ clastersFind xs ms
 
+-- =====  clasterization starter  =====
+
+clasterizationStart :: RangeFunction -> [[Double]] -> Int -> Double -> [[Double]]
+clasterizationStart func xs n eps = clasterization func xs ms eps
+  where ms = suppliesMatrix func xs $ take n xs
+
 -- =====  parsing =====
 
 type Groups = ([Double])

@@ -48,9 +48,22 @@ cordinatClasterFind xs ms = sum1 / sum2
 oneClasterFind :: [[Double]] -> [Double] -> [Double]
 oneClasterFind xs ms = map (\x -> cordinatClasterFind x ms) $ transpose xs
 
-
 clastersFind :: [[Double]] -> [[Double]] -> [[Double]]
 clastersFind xs ms = map (\m -> oneClasterFind xs m) $ transpose ms
+
+-- =====  clasterization  =====
+
+isClasterizationFinished :: [[Double]] -> [[Double]] -> Double -> Bool
+isClasterizationFinished old new eps = if eps > cof then True else False
+  where cof = maximum $ map abs $ zipWith (-) old_c new_c
+        old_c = concat old
+        new_c = concat new
+
+clasterization :: RangeFunction -> [[Double]] -> [[Double]] -> Double -> [[Double]]
+clasterization func xs ms eps
+  | isClasterizationFinished ms ms_new eps = ms_new
+  | otherwise = clasterization func xs ms_new eps
+  where ms_new = suppliesMatrix func xs $ clastersFind xs ms
 
 -- =====  parsing =====
 

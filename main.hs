@@ -30,6 +30,12 @@ suppliesValue :: RangeFunction -> [Double] -> [Double] -> [[Double]] -> Double
 suppliesValue func x v vs = cof ** (-1)
   where cof = foldl (+) 0 $ map (\y -> suppliesCof func x v y) vs
 
+suppliesRow :: RangeFunction -> [Double] -> [[Double]] -> [Double]
+suppliesRow func x vs = map (\v -> suppliesValue func x v vs) vs
+
+suppliesMatrix :: RangeFunction -> [[Double]] -> [[Double]] -> [[Double]]
+suppliesMatrix func xs vs = map (\x -> suppliesRow func x vs) xs
+
 -- =====  parsing =====
 
 type Groups = ([Int])

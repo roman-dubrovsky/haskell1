@@ -83,9 +83,11 @@ clasterization func xs ms eps
 
 -- =====  clasterization starter  =====
 
-clasterizationStart :: RangeFunction -> [[Double]] -> Int -> Double -> [[Double]]
-clasterizationStart func xs n eps = clasterization func xs ms eps
+clasterizationStart :: RangeFunction -> [[Double]] -> InputConfigs -> [[Double]]
+clasterizationStart func xs configs = clasterization func xs ms eps
   where ms = suppliesMatrix func xs $ take n xs
+        n = number configs
+        eps = epsilon configs
 
 -- =====  parsing =====
 
@@ -104,12 +106,26 @@ convertFromCsv = processCsv . V.toList
 data InputConfigs = InputConfigs {
   delemiter :: String
   ,inputFile :: FilePath
+  ,number :: Int
+  ,epsilon :: Double
+  ,metrick :: Int
   } deriving (Show, Data, Typeable)
 
 defaultInputConfigs = InputConfigs {
   delemiter = ","                         &= help "Csv delemiter"
   ,inputFile = "butterfly.txt"            &= help "Input file name"
+  ,number = 3                             &= help "Clusters number"
+  ,epsilon = 0.001                        &= help "Epsilon value"
+  ,metrick = 0                            &= help "Metrick: 0 - Hamming, 1 - Evclide"
 }
+
+currentMetrick :: InputConfigs -> RangeFunction
+currentMetrick configs
+  | m == 1 = evclideRange
+  | otherwise = hammingRange
+  where m = metrick configs
+
+-- =====  main  =====
 
 main :: IO ()
 main = do
@@ -118,6 +134,6 @@ main = do
 
   input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts $ inputFile configs
 
-  let result =  clasterizationStart hammingRange (convertFromCsv input) 3 0.01
+  let result =  clasterizationStart (currentMetrick configs) (convertFromCsv input) configs
 
   print result

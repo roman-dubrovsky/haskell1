@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Main where
 
 import Control.Exception
@@ -8,6 +10,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import Data.Maybe
+import System.Console.CmdArgs
 
 import Data.CSV.Conduit
 import Data.Conduit
@@ -96,11 +99,24 @@ convertFromCsv = processCsv . V.toList
           filterEmpty = filter (\s -> T.strip (T.pack s) /= T.pack "")
           maybeRead x = (fmap fst . listToMaybe . (reads :: String -> [(Double, String)])) x
 
+-- =====  arguments =====
+
+data InputConfigs = InputConfigs {
+  delemiter :: String
+  ,inputFile :: FilePath
+  } deriving (Show, Data, Typeable)
+
+defaultInputConfigs = InputConfigs {
+  delemiter = ","                         &= help "Csv delemiter"
+  ,inputFile = "butterfly.txt"            &= help "Input file name"
+}
+
 main :: IO ()
 main = do
-  let csvOpts = defCSVSettings {csvSep = ',', csvQuoteChar = Nothing}
+  configs <- cmdArgs defaultInputConfigs
+  let csvOpts = defCSVSettings {csvSep = (head (delemiter configs)), csvQuoteChar = Nothing}
 
-  input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts "butterfly.txt"
+  input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts $ inputFile configs
 
   let result =  clasterizationStart hammingRange (convertFromCsv input) 3 0.01
 

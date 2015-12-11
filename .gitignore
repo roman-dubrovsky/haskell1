@@ -16,3 +16,5 @@ cabal.config
 
 batting.csv
 butterfly.txt
+glass.txt
+irises.txt

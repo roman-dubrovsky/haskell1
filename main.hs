@@ -60,10 +60,7 @@ suppliesMatrix func xs vs = map (\x -> suppliesRow func x vs) xs
 -- =====  clasters find  =====
 
 cordinatClasterFind :: [Double] -> [Double] -> Double
-cordinatClasterFind xs ms = sum1 / sum2
-  where sum1 = sum $ zipWith (*) xs $ map (**exp) ms
-        sum2 = sum ms
-        exp = m
+cordinatClasterFind xs ms = (sum $  zipWith (*) xs $ map (**2) ms) / (sum $ map (**2) ms)
 
 oneClasterFind :: [[Double]] -> [Double] -> [Double]
 oneClasterFind xs ms = map (\x -> cordinatClasterFind x ms) $ transpose xs
@@ -88,7 +85,7 @@ clasterization func xs ms eps
 -- =====  clasterization starter  =====
 
 randomCenters :: [[Double]] -> Int -> StdGen -> [[Double]]
-randomCenters xs n gen = map (\c -> xs !! c) $ take n $ (randomRs (0, (length xs) - 1) gen :: [Int])
+randomCenters xs n gen = take n xs
 
 clasterizationStart :: RangeFunction -> [[Double]] -> InputConfigs -> StdGen -> [[Double]]
 clasterizationStart func xs configs gen = clasterization func xs ms eps
@@ -140,7 +137,7 @@ defaultInputConfigs = InputConfigs {
   ,inputFile = "butterfly.txt"            &= help "Input file name"
   ,outputFile = ""                        &= help "Output file name (default console)"
   ,number = 3                             &= help "Clusters number"
-  ,epsilon = 0.00001                      &= help "Epsilon value"
+  ,epsilon = 0.00000001                   &= help "Epsilon value"
   ,metrick = 0                            &= help "Metrick: 0 - Hamming, 1 - Evclide"
   ,header = False                         &= help "Have csv header?"
   ,rowNumber = False                      &= help "Have csv number (row's head)?"

@@ -4,9 +4,12 @@ module Main where
 
 import Control.Exception
 import Prelude
+import Numeric
 import Data.List
 import Data.List.Split
-import qualified Data.ByteString.Lazy as BL
+import System.IO
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString as BS
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import Data.Maybe
@@ -105,11 +108,22 @@ convertFromCsv configs = processCsv . V.toList
           withoutNumber x = if rowNumber configs then tail x else x
           withoutLabel x = if label configs then init x else x
 
+-- =====  output  =====
+
+convertToCsv :: InputConfigs -> [[Double]] -> [B.ByteString]
+convertToCsv configs = intersperse (BS.pack [13, 10]) . map (B.pack . intercalate (delemiter configs) . map ((\f -> f "") . showFFloat (Just 6)))
+
+buildOutputHandle :: InputConfigs -> IO Handle
+buildOutputHandle configs
+    | outputFile configs /= ""  = handleAll (\e -> do { putStrLn $ "Cannot open file for output, using screen: " ++ show e; return stdout }) (openFile (outputFile configs) WriteMode)
+    | otherwise            = return stdout
+
 -- =====  arguments =====
 
 data InputConfigs = InputConfigs {
   delemiter :: String
   ,inputFile :: FilePath
+  ,outputFile :: FilePath
   ,number :: Int
   ,epsilon :: Double
   ,metrick :: Int
@@ -121,13 +135,14 @@ data InputConfigs = InputConfigs {
 defaultInputConfigs = InputConfigs {
   delemiter = ","                         &= help "Csv delemiter"
   ,inputFile = "butterfly.txt"            &= help "Input file name"
+  ,outputFile = ""                        &= help "Output file name (default console)"
   ,number = 3                             &= help "Clusters number"
   ,epsilon = 0.001                        &= help "Epsilon value"
   ,metrick = 0                            &= help "Metrick: 0 - Hamming, 1 - Evclide"
   ,header = False                         &= help "Have csv header?"
   ,rowNumber = False                      &= help "Have csv number (row's head)?"
   ,label = False                          &= help "Have csv class label (row's last)"
-}
+}  &= summary "Lab1 FCM 2015" &= program "lab1"
 
 currentMetrick :: InputConfigs -> RangeFunction
 currentMetrick configs
@@ -146,4 +161,4 @@ main = do
 
   let result =  clasterizationStart (currentMetrick configs) (convertFromCsv configs input) configs
 
-  print result
+  runResourceT $ CL.sourceList (convertToCsv configs result) $$ CB.sinkIOHandle (buildOutputHandle configs)

@@ -104,8 +104,7 @@ handleAll = handle
 convertFromCsv :: InputConfigs -> V.Vector (Row String) -> [[Double]]
 convertFromCsv configs = processCsv . V.toList
     where processCsv = filter (not . null) . map processRow . withoutHeader
-          processRow = map (fromMaybe 0.0) . filter isJust . map maybeRead . filterEmpty . clearRow
-          filterEmpty = filter (\s -> T.strip (T.pack s) /= T.pack "")
+          processRow = map (fromMaybe 0.0) . filter isJust . map maybeRead . clearRow
           maybeRead = fmap fst . listToMaybe . (reads :: String -> [(Double, String)])
           withoutHeader x = if header configs then tail x else x
           clearRow x = withoutNumber $ withoutLabel x

@@ -5,6 +5,7 @@ module Main where
 import Control.Exception
 import Prelude
 import Numeric
+import System.Random
 import Data.List
 import Data.List.Split
 import System.IO
@@ -86,9 +87,12 @@ clasterization func xs ms eps
 
 -- =====  clasterization starter  =====
 
-clasterizationStart :: RangeFunction -> [[Double]] -> InputConfigs -> [[Double]]
-clasterizationStart func xs configs = clasterization func xs ms eps
-  where ms = suppliesMatrix func xs $ take n xs
+randomCenters :: [[Double]] -> Int -> StdGen -> [[Double]]
+randomCenters xs n gen = map (\c -> xs !! c) $ take n $ (randomRs (0, (length xs) - 1) gen :: [Int])
+
+clasterizationStart :: RangeFunction -> [[Double]] -> InputConfigs -> StdGen -> [[Double]]
+clasterizationStart func xs configs gen = clasterization func xs ms eps
+  where ms = suppliesMatrix func xs $ randomCenters xs n gen
         n = number configs
         eps = epsilon configs
 
@@ -137,7 +141,7 @@ defaultInputConfigs = InputConfigs {
   ,inputFile = "butterfly.txt"            &= help "Input file name"
   ,outputFile = ""                        &= help "Output file name (default console)"
   ,number = 3                             &= help "Clusters number"
-  ,epsilon = 0.001                        &= help "Epsilon value"
+  ,epsilon = 0.00001                      &= help "Epsilon value"
   ,metrick = 0                            &= help "Metrick: 0 - Hamming, 1 - Evclide"
   ,header = False                         &= help "Have csv header?"
   ,rowNumber = False                      &= help "Have csv number (row's head)?"
@@ -157,8 +161,10 @@ main = do
   configs <- cmdArgs defaultInputConfigs
   let csvOpts = defCSVSettings {csvSep = (head (delemiter configs)), csvQuoteChar = Nothing}
 
+  rand <- getStdGen
+
   input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts $ inputFile configs
 
-  let result =  clasterizationStart (currentMetrick configs) (convertFromCsv configs input) configs
+  let result =  clasterizationStart (currentMetrick configs) (convertFromCsv configs input) configs rand
 
   runResourceT $ CL.sourceList (convertToCsv configs result) $$ CB.sinkIOHandle (buildOutputHandle configs)

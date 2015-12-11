@@ -94,12 +94,16 @@ clasterizationStart func xs configs = clasterization func xs ms eps
 handleAll :: (SomeException -> IO a) -> IO a -> IO a
 handleAll = handle
 
-convertFromCsv :: V.Vector (Row String) -> [[Double]]
-convertFromCsv = processCsv . V.toList
-    where processCsv = filter (not . null) . map processRow
-          processRow = map (fromMaybe 0.0) . filter isJust . map maybeRead . filterEmpty
+convertFromCsv :: InputConfigs -> V.Vector (Row String) -> [[Double]]
+convertFromCsv configs = processCsv . V.toList
+    where processCsv = filter (not . null) . map processRow . withoutHeader
+          processRow = map (fromMaybe 0.0) . filter isJust . map maybeRead . filterEmpty . clearRow
           filterEmpty = filter (\s -> T.strip (T.pack s) /= T.pack "")
-          maybeRead x = (fmap fst . listToMaybe . (reads :: String -> [(Double, String)])) x
+          maybeRead = fmap fst . listToMaybe . (reads :: String -> [(Double, String)])
+          withoutHeader x = if header configs then tail x else x
+          clearRow x = withoutNumber $ withoutLabel x
+          withoutNumber x = if rowNumber configs then tail x else x
+          withoutLabel x = if label configs then init x else x
 
 -- =====  arguments =====
 
@@ -109,6 +113,9 @@ data InputConfigs = InputConfigs {
   ,number :: Int
   ,epsilon :: Double
   ,metrick :: Int
+  ,header :: Bool
+  ,rowNumber :: Bool
+  ,label :: Bool
   } deriving (Show, Data, Typeable)
 
 defaultInputConfigs = InputConfigs {
@@ -117,6 +124,9 @@ defaultInputConfigs = InputConfigs {
   ,number = 3                             &= help "Clusters number"
   ,epsilon = 0.001                        &= help "Epsilon value"
   ,metrick = 0                            &= help "Metrick: 0 - Hamming, 1 - Evclide"
+  ,header = False                         &= help "Have csv header?"
+  ,rowNumber = False                      &= help "Have csv number (row's head)?"
+  ,label = False                          &= help "Have csv class label (row's last)"
 }
 
 currentMetrick :: InputConfigs -> RangeFunction
@@ -134,6 +144,6 @@ main = do
 
   input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts $ inputFile configs
 
-  let result =  clasterizationStart (currentMetrick configs) (convertFromCsv input) configs
+  let result =  clasterizationStart (currentMetrick configs) (convertFromCsv configs input) configs
 
   print result

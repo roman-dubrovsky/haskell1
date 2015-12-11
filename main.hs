@@ -1,10 +1,18 @@
 module Main where
 
+import Control.Exception
 import Prelude
 import Data.List
+import Data.List.Split
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
-import Data.Csv
+import qualified Data.Text as T
+import Data.Maybe
+
+import Data.CSV.Conduit
+import Data.Conduit
+import qualified Data.Conduit.Binary as CB
+import qualified Data.Conduit.List as CL
 
 -- ===== constants =====
 
@@ -78,12 +86,22 @@ clasterizationStart func xs n eps = clasterization func xs ms eps
 
 -- =====  parsing =====
 
-type Groups = ([Double])
+handleAll :: (SomeException -> IO a) -> IO a -> IO a
+handleAll = handle
+
+convertFromCsv :: V.Vector (Row String) -> [[Double]]
+convertFromCsv = processCsv . V.toList
+    where processCsv = filter (not . null) . map processRow
+          processRow = map (fromMaybe 0.0) . filter isJust . map maybeRead . filterEmpty
+          filterEmpty = filter (\s -> T.strip (T.pack s) /= T.pack "")
+          maybeRead x = (fmap fst . listToMaybe . (reads :: String -> [(Double, String)])) x
 
 main :: IO ()
-
 main = do
-  csvData <- BL.readFile "butterfly.txt"
-  let csv = decode NoHeader csvData :: Either String (V.Vector Groups)
+  let csvOpts = defCSVSettings {csvSep = ',', csvQuoteChar = Nothing}
 
-  print "Hello"
+  input <- handleAll (\e -> error $ "Cannot read input file: " ++ show e ) $ runResourceT $ readCSVFile csvOpts "butterfly.txt"
+
+  let result =  clasterizationStart hammingRange (convertFromCsv input) 3 0.01
+
+  print result

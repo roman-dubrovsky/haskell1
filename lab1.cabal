@@ -22,6 +22,8 @@ executable lab1
   build-depends:        base >=4.8 && <4.9,
                         bytestring,
                         vector,
-                        cassava
+                        csv-conduit,conduit,conduit-extra,
+                        text,
+                        split
   -- hs-source-dirs:
   default-language:    Haskell2010
